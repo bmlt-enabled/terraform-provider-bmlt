@@ -16,7 +16,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # Allow goreleaser to access older tag information.
           fetch-depth: 0
 
       - name: Set up Go
@@ -29,13 +28,12 @@ jobs:
         id: import_gpg
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.PASSPHRASE }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
           args: release --clean
         env:
-          # GitHub sets the GITHUB_TOKEN secret automatically.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
