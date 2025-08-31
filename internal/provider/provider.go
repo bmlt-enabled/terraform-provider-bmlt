@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"os"
+	"strings"
 
 	"github.com/bmlt-enabled/bmlt-server-go-client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -156,27 +157,76 @@ func (p *BMTProvider) Configure(ctx context.Context, req provider.ConfigureReque
 
 	// Create a new BMLT client using your generated client
 	cfg := bmlt.NewConfiguration()
-	cfg.Host = host
-	cfg.Scheme = "https"
-	if host[:7] == "http://" {
-		cfg.Scheme = "http"
-		host = host[7:]
-	} else if host[:8] == "https://" {
-		cfg.Scheme = "https"
-		host = host[8:]
+
+	// Parse the host URL to extract scheme, host, and path separately
+	var scheme, hostOnly, basePath string
+	if len(host) >= 7 && host[:7] == "http://" {
+		scheme = "http"
+		remaining := host[7:]
+		if idx := strings.Index(remaining, "/"); idx != -1 {
+			hostOnly = remaining[:idx]
+			basePath = remaining[idx:]
+		} else {
+			hostOnly = remaining
+			basePath = ""
+		}
+	} else if len(host) >= 8 && host[:8] == "https://" {
+		scheme = "https"
+		remaining := host[8:]
+		if idx := strings.Index(remaining, "/"); idx != -1 {
+			hostOnly = remaining[:idx]
+			basePath = remaining[idx:]
+		} else {
+			hostOnly = remaining
+			basePath = ""
+		}
+	} else {
+		// Default to https if no scheme provided
+		scheme = "https"
+		if idx := strings.Index(host, "/"); idx != -1 {
+			hostOnly = host[:idx]
+			basePath = host[idx:]
+		} else {
+			hostOnly = host
+			basePath = ""
+		}
 	}
-	cfg.Host = host
+
+	// Normalize basePath
+	if basePath != "" {
+		if !strings.HasPrefix(basePath, "/") {
+			basePath = "/" + basePath
+		}
+		if strings.HasSuffix(basePath, "/") {
+			basePath = basePath[:len(basePath)-1]
+		}
+	}
+
+	cfg.Scheme = scheme
+	cfg.Host = hostOnly
+
+	// Add base path to servers configuration
+	if basePath != "" {
+		cfg.Servers = bmlt.ServerConfigurations{
+			{
+				URL:         scheme + "://" + hostOnly + basePath,
+				Description: "BMLT server with custom path",
+			},
+		}
+	}
 
 	client := bmlt.NewAPIClient(cfg)
 
 	// Set up OAuth2 authentication
+	// The token URL should include the base path
 	oauthConfig := &oauth2.Config{
 		Endpoint: oauth2.Endpoint{
-			TokenURL: cfg.Scheme + "://" + cfg.Host + "/api/v1/auth/token",
+			TokenURL: scheme + "://" + hostOnly + basePath + "/api/v1/auth/token",
 		},
 	}
 
-	token, err := oauthConfig.PasswordCredentialsToken(ctx, username, password)
+	// Use background context for OAuth2 authentication to avoid timeouts
+	token, err := oauthConfig.PasswordCredentialsToken(context.Background(), username, password)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to Create BMLT API Client",
@@ -185,9 +235,9 @@ func (p *BMTProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		return
 	}
 
-	// Create authenticated context
-	tokenSource := oauthConfig.TokenSource(ctx, token)
-	authCtx := context.WithValue(ctx, bmlt.ContextOAuth2, tokenSource)
+	// Create authenticated context using background context
+	tokenSource := oauthConfig.TokenSource(context.Background(), token)
+	authCtx := context.WithValue(context.Background(), bmlt.ContextOAuth2, tokenSource)
 
 	// Create a client data structure to pass to resources and data sources
 	clientData := &BMTLClientData{
