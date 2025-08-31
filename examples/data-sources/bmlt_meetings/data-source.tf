@@ -1,0 +1,26 @@
+# Get all meetings
+data "bmlt_meetings" "all" {}
+
+# Get meetings filtered by service body
+data "bmlt_meetings" "service_body_meetings" {
+  service_body_ids = "1,2,3"
+}
+
+# Get meetings for specific days
+data "bmlt_meetings" "weekend_meetings" {
+  days = "0,6" # Sunday and Saturday
+}
+
+# Search meetings by name
+data "bmlt_meetings" "searched_meetings" {
+  search_string = "Big Book"
+}
+
+# Output examples
+output "total_meetings" {
+  value = length(data.bmlt_meetings.all.meetings)
+}
+
+output "weekend_meeting_names" {
+  value = [for meeting in data.bmlt_meetings.weekend_meetings.meetings : meeting.name]
+}

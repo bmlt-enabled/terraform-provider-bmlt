@@ -1,0 +1,67 @@
+name: Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version: ['1.21.x', '1.22.x']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Get dependencies
+      run: |
+        go mod download
+
+    - name: Build
+      run: go build -v .
+
+    - name: Run tests
+      run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.out
+        flags: unittests
+        name: codecov-umbrella
+
+  acceptance:
+    name: Acceptance Tests
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-go@v5
+      with:
+        go-version: '1.22.x'
+
+    - name: Get dependencies
+      run: |
+        go mod download
+
+    - name: TF acceptance tests
+      timeout-minutes: 45
+      env:
+        TF_ACC: "1"
+        # Add your BMLT test server credentials here if needed
+        # BMLT_HOST: ${{ secrets.BMLT_HOST }}
+        # BMLT_USERNAME: ${{ secrets.BMLT_USERNAME }}
+        # BMLT_PASSWORD: ${{ secrets.BMLT_PASSWORD }}
+      run: go test -v -cover ./internal/provider/

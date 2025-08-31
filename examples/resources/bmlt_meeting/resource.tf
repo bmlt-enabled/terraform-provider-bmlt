@@ -1,0 +1,29 @@
+resource "bmlt_meeting" "example" {
+  service_body_id = 1
+  format_ids      = [1, 2, 3]
+  venue_type      = 1 # In-person
+  day             = 1 # Monday
+  start_time      = "19:00"
+  duration        = "01:30"
+  time_zone       = "America/New_York"
+  latitude        = 40.7128
+  longitude       = -74.0060
+  published       = true
+  name            = "Monday Night Group"
+
+  # Optional location fields
+  location_text         = "Community Center"
+  location_street       = "123 Main St"
+  location_municipality = "New York"
+  location_province     = "NY"
+  location_postal_code_1 = "10001"
+  location_nation       = "USA"
+
+  # Optional contact information
+  contact_name_1  = "John Doe"
+  contact_phone_1 = "555-1234"
+  contact_email_1 = "john@example.com"
+
+  # Optional additional info
+  comments = "Ring bell for entry"
+}
