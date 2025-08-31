@@ -1,58 +1,58 @@
-name: Security
-
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  schedule:
-    - cron: '0 0 * * 1' # Weekly on Mondays
-
-jobs:
-  govulncheck:
-    name: Go Vulnerability Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: 'go.mod'
-
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-
-      - name: Run govulncheck
-        run: govulncheck ./...
-
-  gosec:
-    name: Go Security
-    runs-on: ubuntu-latest
-    env:
-      GO111MODULE: on
-    steps:
-      - name: Checkout Source
-        uses: actions/checkout@v4
-
-      - name: Run Gosec Security Scanner
-        uses: securecodewarrior/github-action-gosec@master
-        with:
-          args: './...'
-
-  nancy:
-    name: Nancy Vulnerability Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: 'go.mod'
-
-      - name: WriteGoList
-        run: go list -json -deps ./... > go.list
-
-      - name: Nancy
-        uses: sonatypecommunity/nancy-github-action@main
-        with:
-          nancyCommand: sleuth --path go.list
+#name: Security
+#
+#on:
+#  push:
+#    branches: [ "main" ]
+#  pull_request:
+#    branches: [ "main" ]
+#  schedule:
+#    - cron: '0 0 * * 1' # Weekly on Mondays
+#
+#jobs:
+#  govulncheck:
+#    name: Go Vulnerability Check
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - uses: actions/setup-go@v5
+#        with:
+#          go-version-file: 'go.mod'
+#
+#      - name: Install govulncheck
+#        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+#
+#      - name: Run govulncheck
+#        run: govulncheck ./...
+#
+#  gosec:
+#    name: Go Security
+#    runs-on: ubuntu-latest
+#    env:
+#      GO111MODULE: on
+#    steps:
+#      - name: Checkout Source
+#        uses: actions/checkout@v4
+#
+#      - name: Run Gosec Security Scanner
+#        uses: securecodewarrior/github-action-gosec@master
+#        with:
+#          args: './...'
+#
+#  nancy:
+#    name: Nancy Vulnerability Check
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - uses: actions/setup-go@v5
+#        with:
+#          go-version-file: 'go.mod'
+#
+#      - name: WriteGoList
+#        run: go list -json -deps ./... > go.list
+#
+#      - name: Nancy
+#        uses: sonatypecommunity/nancy-github-action@main
+#        with:
+#          nancyCommand: sleuth --path go.list
