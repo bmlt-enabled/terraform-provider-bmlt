@@ -1,0 +1,119 @@
+---
+page_title: "bmlt Provider"
+subcategory: ""
+description: |-
+  The BMLT Terraform Provider allows you to manage BMLT (Basic Meeting List Toolbox) resources using Infrastructure as Code.
+---
+
+# BMLT Provider
+
+The BMLT Terraform Provider allows you to manage BMLT (Basic Meeting List Toolbox) resources using Infrastructure as Code. This provider supports managing meetings, formats, service bodies, and users through the BMLT API.
+
+## About BMLT
+
+BMLT (Basic Meeting List Toolbox) is a powerful, database-driven system for tracking NA and AA meetings. It is developed specifically for organizations that need to maintain accurate, up-to-date meeting lists.
+
+## Features
+
+- **OAuth2 Authentication**: Secure authentication using username/password flow
+- **Full CRUD Operations**: Create, read, update, and delete BMLT resources
+- **Import Support**: Import existing resources using their ID
+- **Comprehensive Error Handling**: Detailed error messages for troubleshooting
+- **Environment Variable Support**: Configure using environment variables or provider block
+
+## Example Usage
+
+{{tffile "examples/provider/provider.tf"}}
+
+## Configuration
+
+The provider can be configured in three ways:
+
+### Provider Block Configuration (Development)
+```hcl
+provider "bmlt" {
+  host     = "https://bmlt.example.com/main_server"
+  username = "your_username"
+  password = "your_password"
+}
+```
+
+### Environment Variables (Production - Recommended)
+```bash
+export BMLT_HOST="https://bmlt.example.com/main_server"
+export BMLT_USERNAME="your_username"
+export BMLT_PASSWORD="your_password"
+```
+
+### Terraform Variables
+```hcl
+provider "bmlt" {
+  host     = var.bmlt_host
+  username = var.bmlt_username
+  password = var.bmlt_password
+}
+
+variable "bmlt_host" {
+  description = "BMLT server host URL"
+  type        = string
+}
+
+variable "bmlt_username" {
+  description = "BMLT username"
+  type        = string
+  sensitive   = true
+}
+
+variable "bmlt_password" {
+  description = "BMLT password"
+  type        = string
+  sensitive   = true
+}
+```
+
+## Authentication
+
+This provider uses OAuth2 password flow authentication. The provider will automatically:
+
+1. Exchange your username/password for an access token
+2. Handle token refresh automatically
+3. Include the token in all API requests
+
+**Security Note**: Always use environment variables for production deployments to avoid exposing credentials in your Terraform configuration.
+
+## Resources
+
+- [`bmlt_format`](resources/format) - Manages meeting formats
+- [`bmlt_meeting`](resources/meeting) - Manages meetings  
+- [`bmlt_service_body`](resources/service_body) - Manages service bodies (organizational units)
+- [`bmlt_user`](resources/user) - Manages BMLT users
+
+## Data Sources
+
+- [`bmlt_formats`](data-sources/formats) - Retrieve all available formats
+- [`bmlt_meetings`](data-sources/meetings) - Query meetings with optional filtering
+- [`bmlt_service_bodies`](data-sources/service_bodies) - Retrieve all service bodies
+- [`bmlt_users`](data-sources/users) - Retrieve all users
+
+## Import Support
+
+All resources support Terraform import using their numeric ID:
+
+```bash
+terraform import bmlt_format.example 123
+terraform import bmlt_meeting.example 456
+terraform import bmlt_service_body.example 789
+terraform import bmlt_user.example 101
+```
+
+## Error Handling
+
+The provider includes comprehensive error handling for:
+
+- **Authentication errors (401)**: Invalid credentials or expired tokens
+- **Authorization errors (403)**: Insufficient permissions
+- **Resource not found errors (404)**: Resource doesn't exist
+- **Validation errors (422)**: Invalid input data
+- **Server errors (500)**: BMLT server issues
+
+{{ .SchemaMarkdown | trimspace }}

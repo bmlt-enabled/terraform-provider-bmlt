@@ -1,0 +1,129 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Name}} ({{.Type}})
+
+{{ .Description | trimspace }}
+
+Meetings are the core resource in BMLT, representing individual NA or AA meetings with their location, time, and other details.
+
+## Example Usage
+
+### Basic Meeting
+
+{{tffile "examples/resources/bmlt_meeting/resource.tf"}}
+
+### Complete Meeting with All Fields
+
+```hcl
+resource "bmlt_meeting" "comprehensive_example" {
+  # Required fields
+  service_body_id = data.bmlt_service_bodies.all.service_bodies[0].id
+  format_ids      = [1, 2, 17] # Beginners, Bi-Lingual, Open
+  venue_type      = 1          # In-person
+  day             = 1          # Monday (0=Sunday, 1=Monday, etc.)
+  start_time      = "19:00"    # 7:00 PM
+  duration        = "01:30"    # 1 hour 30 minutes
+  latitude        = 40.7128
+  longitude       = -74.0060
+  published       = true
+  name            = "Monday Night Recovery Group"
+
+  # Optional location fields
+  location_text         = "Community Center - Main Room"
+  location_info         = "Enter through main entrance"
+  location_street       = "123 Recovery Avenue"
+  location_municipality = "New York"
+  location_province     = "NY"
+  location_postal_code_1 = "10001"
+  location_nation       = "USA"
+
+  # Optional virtual meeting fields (for hybrid/virtual meetings)
+  virtual_meeting_link           = "https://zoom.us/j/123456789"
+  virtual_meeting_additional_info = "Meeting ID: 123-456-789, Password: recovery"
+
+  # Optional contact information
+  contact_name_1  = "John Smith"
+  contact_phone_1 = "555-0123"
+  contact_email_1 = "john@example.com"
+
+  # Additional information
+  comments = "Newcomers especially welcome. Literature available."
+  email    = "meeting@example.com"
+  time_zone = "America/New_York"
+}
+```
+
+### Virtual Meeting
+
+```hcl
+resource "bmlt_meeting" "virtual_meeting" {
+  service_body_id = data.bmlt_service_bodies.area.service_bodies[0].id
+  format_ids      = [4, 50] # Closed, Online Meeting
+  venue_type      = 2       # Virtual
+  day             = 3       # Wednesday
+  start_time      = "20:00"
+  duration        = "01:00"
+  latitude        = 0.0     # Default for virtual meetings
+  longitude       = 0.0
+  published       = true
+  name            = "Wednesday Night Virtual Group"
+
+  virtual_meeting_link           = "https://zoom.us/j/987654321"
+  virtual_meeting_additional_info = "Meeting ID: 987-654-321, Password: serenity"
+  
+  contact_email_1 = "virtual@example.com"
+  comments        = "Virtual meeting via Zoom. Please join 5 minutes early."
+}
+```
+
+### Using Data Sources for Dynamic Configuration
+
+```hcl
+# Get all formats to reference them dynamically
+data "bmlt_formats" "all" {}
+
+# Find specific formats
+locals {
+  open_format = [for format in data.bmlt_formats.all.formats : format.id if format.world_id == "OPEN"][0]
+  disc_format = [for format in data.bmlt_formats.all.formats : format.id if format.world_id == "DISC"][0]
+}
+
+resource "bmlt_meeting" "dynamic_meeting" {
+  service_body_id = var.service_body_id
+  format_ids      = [local.open_format, local.disc_format]
+  venue_type      = var.venue_type
+  day             = var.meeting_day
+  start_time      = var.start_time
+  duration        = "01:00"
+  latitude        = var.latitude
+  longitude       = var.longitude
+  published       = true
+  name            = "${var.meeting_name} - ${formatdate("EEEE", timeadd("2006-01-02T00:00:00Z", "${var.meeting_day * 24}h"))}"
+  
+  location_street       = var.street_address
+  location_municipality = var.city
+  location_province     = var.state
+  location_postal_code_1 = var.zip_code
+  location_nation       = "USA"
+}
+```
+
+## Import
+
+Meetings can be imported using their BMLT meeting ID:
+
+```bash
+terraform import bmlt_meeting.example 456
+```
+
+You can find the meeting ID by:
+1. Looking at the meeting details in the BMLT admin interface
+2. Using the BMLT API directly: `GET /api/v1/meetings/{id}`
+3. Using the `bmlt_meetings` data source to query existing meetings
+
+{{ .SchemaMarkdown | trimspace }}

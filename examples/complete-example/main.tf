@@ -1,12 +1,19 @@
 terraform {
   required_providers {
     bmlt = {
-      source = "bmlt-enabled/bmlt"
+      source  = "bmlt-enabled/bmlt"
+      version = "~> 1.0"
     }
   }
 }
 
 provider "bmlt" {
+  # Configuration via environment variables is recommended for production
+  # export BMLT_HOST="https://your-bmlt-server.com/main_server"
+  # export BMLT_USERNAME="your_username"
+  # export BMLT_PASSWORD="your_password"
+
+  # Or use variables for development
   host     = var.bmlt_host
   username = var.bmlt_username
   password = var.bmlt_password
@@ -84,12 +91,12 @@ resource "bmlt_meeting" "terraform_meeting" {
   name            = "Terraform Managed Meeting"
 
   # Location details
-  location_text         = "Community Center Room A"
-  location_street       = "123 Terraform Ave"
-  location_municipality = "Tech City"
-  location_province     = "NY"
+  location_text          = "Community Center Room A"
+  location_street        = "123 Terraform Ave"
+  location_municipality  = "Tech City"
+  location_province      = "NY"
   location_postal_code_1 = "12345"
-  location_nation       = "USA"
+  location_nation        = "USA"
 
   # Contact information
   contact_name_1  = "Jane Smith"

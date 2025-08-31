@@ -12,12 +12,12 @@ resource "bmlt_meeting" "example" {
   name            = "Monday Night Group"
 
   # Optional location fields
-  location_text         = "Community Center"
-  location_street       = "123 Main St"
-  location_municipality = "New York"
-  location_province     = "NY"
+  location_text          = "Community Center"
+  location_street        = "123 Main St"
+  location_municipality  = "New York"
+  location_province      = "NY"
   location_postal_code_1 = "10001"
-  location_nation       = "USA"
+  location_nation        = "USA"
 
   # Optional contact information
   contact_name_1  = "John Doe"

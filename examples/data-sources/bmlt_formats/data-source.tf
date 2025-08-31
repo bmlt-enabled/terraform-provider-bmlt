@@ -6,7 +6,7 @@ output "format_count" {
 }
 
 output "format_names" {
-  value = [for format in data.bmlt_formats.all.formats : 
+  value = [for format in data.bmlt_formats.all.formats :
     format.translations[0].name if length(format.translations) > 0
   ]
 }
