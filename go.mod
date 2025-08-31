@@ -5,12 +5,10 @@ go 1.23.0
 toolchain go1.24.3
 
 require (
-	github.com/bmlt-enabled/bmlt-server-go-client v0.0.0
+	github.com/bmlt-enabled/bmlt-server-go-client v1.2.0
 	github.com/hashicorp/terraform-plugin-framework v1.9.0
 	golang.org/x/oauth2 v0.27.0
 )
-
-replace github.com/bmlt-enabled/bmlt-server-go-client => ../
 
 require (
 	github.com/fatih/color v1.13.0 // indirect
