@@ -28,9 +28,10 @@ type BMTProvider struct {
 
 // BMTProviderModel describes the provider data model.
 type BMTProviderModel struct {
-	Host     types.String `tfsdk:"host"`
-	Username types.String `tfsdk:"username"`
-	Password types.String `tfsdk:"password"`
+	Host        types.String `tfsdk:"host"`
+	Username    types.String `tfsdk:"username"`
+	Password    types.String `tfsdk:"password"`
+	AccessToken types.String `tfsdk:"access_token"`
 }
 
 func (p *BMTProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -55,6 +56,11 @@ func (p *BMTProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 				Optional:            true,
 				Sensitive:           true,
 			},
+			"access_token": schema.StringAttribute{
+				MarkdownDescription: "OAuth2 access token for BMLT server authentication (alternative to username/password)",
+				Optional:            true,
+				Sensitive:           true,
+			},
 		},
 	}
 }
@@ -68,12 +74,7 @@ func (p *BMTProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		return
 	}
 
-	// Configuration values are now available:
-	// data.Host, data.Username, data.Password
-
-	// If practitioner provided a configuration value for any of the
-	// attributes, it must be a known value.
-
+	// Check for unknown values
 	if data.Host.IsUnknown() {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("host"),
@@ -87,8 +88,7 @@ func (p *BMTProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		resp.Diagnostics.AddAttributeError(
 			path.Root("username"),
 			"Unknown BMLT API Username",
-			"The provider cannot create the BMLT API client as there is an unknown configuration value for the BMLT API username. "+
-				"Either target apply the source of the value first, set the value statically in the configuration, or use the BMLT_USERNAME environment variable.",
+			"The provider cannot create the BMLT API client as there is an unknown configuration value for the BMLT API username.",
 		)
 	}
 
@@ -96,8 +96,15 @@ func (p *BMTProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		resp.Diagnostics.AddAttributeError(
 			path.Root("password"),
 			"Unknown BMLT API Password",
-			"The provider cannot create the BMLT API client as there is an unknown configuration value for the BMLT API password. "+
-				"Either target apply the source of the value first, set the value statically in the configuration, or use the BMLT_PASSWORD environment variable.",
+			"The provider cannot create the BMLT API client as there is an unknown configuration value for the BMLT API password.",
+		)
+	}
+
+	if data.AccessToken.IsUnknown() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("access_token"),
+			"Unknown BMLT API Access Token",
+			"The provider cannot create the BMLT API client as there is an unknown configuration value for the BMLT API access token.",
 		)
 	}
 
@@ -105,12 +112,11 @@ func (p *BMTProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		return
 	}
 
-	// Default values to environment variables, but override
-	// with Terraform configuration value if set.
-
+	// Get values from config or environment variables
 	host := os.Getenv("BMLT_HOST")
 	username := os.Getenv("BMLT_USERNAME")
 	password := os.Getenv("BMLT_PASSWORD")
+	accessToken := os.Getenv("BMLT_ACCESS_TOKEN")
 
 	if !data.Host.IsNull() {
 		host = data.Host.ValueString()
@@ -124,39 +130,60 @@ func (p *BMTProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		password = data.Password.ValueString()
 	}
 
-	// If any of the expected configurations are missing, return
-	// errors with provider-specific guidance.
+	if !data.AccessToken.IsNull() {
+		accessToken = data.AccessToken.ValueString()
+	}
 
+	// Validate required host
 	if host == "" {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("host"),
 			"Missing BMLT API Host",
 			"The provider requires a BMLT server host URL. Set the host value in the configuration or use the BMLT_HOST environment variable.",
 		)
-	}
-
-	if username == "" {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("username"),
-			"Missing BMLT API Username",
-			"The provider requires a username for authentication. Set the username value in the configuration or use the BMLT_USERNAME environment variable.",
-		)
-	}
-
-	if password == "" {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("password"),
-			"Missing BMLT API Password",
-			"The provider requires a password for authentication. Set the password value in the configuration or use the BMLT_PASSWORD environment variable.",
-		)
-	}
-
-	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Create a new BMLT client using your generated client
-	cfg := bmlt.NewConfiguration()
+	// Validate authentication method - either username/password OR access_token
+	hasUsernamePassword := username != "" && password != ""
+	hasAccessToken := accessToken != ""
+
+	if !hasUsernamePassword && !hasAccessToken {
+		resp.Diagnostics.AddError(
+			"Missing Authentication Configuration",
+			"The provider requires authentication. Provide either:\n"+
+				"1. Both username and password (via configuration or BMLT_USERNAME/BMLT_PASSWORD environment variables)\n"+
+				"2. An access_token (via configuration or BMLT_ACCESS_TOKEN environment variable)",
+		)
+		return
+	}
+
+	if hasUsernamePassword && hasAccessToken {
+		resp.Diagnostics.AddError(
+			"Conflicting Authentication Configuration",
+			"The provider cannot use both username/password and access_token authentication methods simultaneously. "+
+				"Please provide either username/password OR access_token, not both.",
+		)
+		return
+	}
+
+	if hasUsernamePassword && (username == "" || password == "") {
+		if username == "" {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("username"),
+				"Missing BMLT API Username",
+				"Username is required when using username/password authentication. Set the username value in the configuration or use the BMLT_USERNAME environment variable.",
+			)
+		}
+		if password == "" {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("password"),
+				"Missing BMLT API Password",
+				"Password is required when using username/password authentication. Set the password value in the configuration or use the BMLT_PASSWORD environment variable.",
+			)
+		}
+		return
+	}
 
 	// Parse the host URL to extract scheme, host, and path separately
 	var scheme, hostOnly, basePath string
@@ -202,6 +229,8 @@ func (p *BMTProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		}
 	}
 
+	// Create BMLT client configuration
+	cfg := bmlt.NewConfiguration()
 	cfg.Scheme = scheme
 	cfg.Host = hostOnly
 
@@ -217,27 +246,39 @@ func (p *BMTProvider) Configure(ctx context.Context, req provider.ConfigureReque
 
 	client := bmlt.NewAPIClient(cfg)
 
-	// Set up OAuth2 authentication
-	// The token URL should include the base path
-	oauthConfig := &oauth2.Config{
-		Endpoint: oauth2.Endpoint{
-			TokenURL: scheme + "://" + hostOnly + basePath + "/api/v1/auth/token",
-		},
-	}
+	// Set up authentication based on the provided method
+	var authCtx context.Context
 
-	// Use background context for OAuth2 authentication to avoid timeouts
-	token, err := oauthConfig.PasswordCredentialsToken(context.Background(), username, password)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Create BMLT API Client",
-			"An unexpected error occurred when creating the BMLT API client: "+err.Error(),
-		)
-		return
-	}
+	if hasAccessToken {
+		// Use provided access token directly
+		token := &oauth2.Token{
+			AccessToken: accessToken,
+			TokenType:   "bearer",
+		}
+		tokenSource := oauth2.StaticTokenSource(token)
+		authCtx = context.WithValue(context.Background(), bmlt.ContextOAuth2, tokenSource)
+	} else {
+		// Use username/password to obtain token
+		oauthConfig := &oauth2.Config{
+			Endpoint: oauth2.Endpoint{
+				TokenURL: scheme + "://" + hostOnly + basePath + "/api/v1/auth/token",
+			},
+		}
 
-	// Create authenticated context using background context
-	tokenSource := oauthConfig.TokenSource(context.Background(), token)
-	authCtx := context.WithValue(context.Background(), bmlt.ContextOAuth2, tokenSource)
+		// Use background context for OAuth2 authentication to avoid timeouts
+		token, err := oauthConfig.PasswordCredentialsToken(context.Background(), username, password)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to Create BMLT API Client",
+				"An unexpected error occurred when creating the BMLT API client using username/password: "+err.Error(),
+			)
+			return
+		}
+
+		// Create authenticated context using background context
+		tokenSource := oauthConfig.TokenSource(context.Background(), token)
+		authCtx = context.WithValue(context.Background(), bmlt.ContextOAuth2, tokenSource)
+	}
 
 	// Create a client data structure to pass to resources and data sources
 	clientData := &BMTLClientData{

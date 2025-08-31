@@ -58,3 +58,11 @@ Required:
 - `key` (String) Translation key
 - `language` (String) Language code
 - `name` (String) Format name
+
+## Import
+
+Formats can be imported using their numeric ID:
+
+```shell
+terraform import bmlt_format.example 123
+```

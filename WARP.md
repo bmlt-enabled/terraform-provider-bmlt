@@ -140,7 +140,10 @@ The provider follows the **Terraform Plugin Framework** pattern:
 
 ## Configuration Requirements
 
-The provider requires BMLT server credentials, configured via:
+The provider supports two authentication methods:
+
+### Method 1: Username/Password (OAuth2 Flow)
+The provider exchanges your credentials for an OAuth2 access token automatically.
 
 1. **Provider block** (development):
 ```hcl
@@ -156,6 +159,30 @@ provider "bmlt" {
 export BMLT_HOST="https://bmlt.example.com/main_server"
 export BMLT_USERNAME="your_username"
 export BMLT_PASSWORD="your_password"
+```
+
+### Method 2: Access Token (Direct)
+Use a pre-generated OAuth2 access token directly - ideal for CI/CD pipelines.
+
+1. **Provider block**:
+```hcl
+provider "bmlt" {
+  host         = "https://bmlt.example.com/main_server"
+  access_token = "your_oauth2_access_token"
+}
+```
+
+2. **Environment variable**:
+```bash
+export BMLT_HOST="https://bmlt.example.com/main_server"
+export BMLT_ACCESS_TOKEN="your_oauth2_access_token"
+```
+
+**Generate Access Token:**
+```bash
+curl -X POST "https://your-server.com/main_server/api/v1/auth/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=password&username=your_username&password=your_password"
 ```
 
 ## Release Process
