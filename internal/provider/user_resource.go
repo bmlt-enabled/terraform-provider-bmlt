@@ -219,6 +219,27 @@ func (r *UserResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		return
 	}
 
+	// Re-read the user to ensure state is consistent with server
+	userId, err := strconv.ParseInt(data.Id.ValueString(), 10, 64)
+	if err != nil {
+		resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse user ID: %s", err))
+		return
+	}
+
+	updatedUser, httpResp, err := r.client.Client.RootServerAPI.GetUser(r.client.Context, userId).Execute()
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read updated user, got error: %s", err))
+		return
+	}
+
+	if httpResp.StatusCode != 200 {
+		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d when reading updated user", httpResp.StatusCode))
+		return
+	}
+
+	// Update all fields from the server response
+	r.updateModelFromUser(data, updatedUser)
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -252,13 +273,14 @@ func (r *UserResource) ImportState(ctx context.Context, req resource.ImportState
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
+
 // Helper function to update model from API response
 func (r *UserResource) updateModelFromUser(data *UserResourceModel, user *bmlt.User) {
 	data.Username = types.StringValue(user.Username)
 	data.Type = types.StringValue(user.Type)
 	data.DisplayName = types.StringValue(user.DisplayName)
-	data.Description = types.StringValue(user.Description)
-	data.Email = types.StringValue(user.Email)
+	data.Description = nullableString(user.Description)
+	data.Email = nullableString(user.Email)
 	data.OwnerId = types.Int64Value(int64(user.OwnerId))
 	// Note: Password is not returned from API for security reasons
 }

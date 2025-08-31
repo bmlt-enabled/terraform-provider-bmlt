@@ -254,6 +254,27 @@ func (r *ServiceBodyResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
+	// Re-read the service body to ensure state is consistent with server
+	serviceBodyId, err := strconv.ParseInt(data.Id.ValueString(), 10, 64)
+	if err != nil {
+		resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse service body ID: %s", err))
+		return
+	}
+
+	updatedServiceBody, httpResp, err := r.client.Client.RootServerAPI.GetServiceBody(r.client.Context, serviceBodyId).Execute()
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read updated service body, got error: %s", err))
+		return
+	}
+
+	if httpResp.StatusCode != 200 {
+		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d when reading updated service body", httpResp.StatusCode))
+		return
+	}
+
+	// Update all fields from the server response
+	r.updateModelFromServiceBody(data, updatedServiceBody)
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -287,6 +308,7 @@ func (r *ServiceBodyResource) ImportState(ctx context.Context, req resource.Impo
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
+
 // Helper function to update model from API response
 func (r *ServiceBodyResource) updateModelFromServiceBody(data *ServiceBodyResourceModel, serviceBody *bmlt.ServiceBody) {
 	// Handle nullable ParentId
@@ -300,10 +322,10 @@ func (r *ServiceBodyResource) updateModelFromServiceBody(data *ServiceBodyResour
 	data.Description = types.StringValue(serviceBody.Description)
 	data.Type = types.StringValue(serviceBody.Type)
 	data.AdminUserId = types.Int64Value(int64(serviceBody.AdminUserId))
-	data.Url = types.StringValue(serviceBody.Url)
-	data.Helpline = types.StringValue(serviceBody.Helpline)
-	data.Email = types.StringValue(serviceBody.Email)
-	data.WorldId = types.StringValue(serviceBody.WorldId)
+	data.Url = nullableString(serviceBody.Url)
+	data.Helpline = nullableString(serviceBody.Helpline)
+	data.Email = nullableString(serviceBody.Email)
+	data.WorldId = nullableString(serviceBody.WorldId)
 
 	// Handle assigned user IDs
 	var assignedUserIds []types.Int64

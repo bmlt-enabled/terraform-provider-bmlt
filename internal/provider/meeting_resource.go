@@ -357,6 +357,27 @@ func (r *MeetingResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
+	// Re-read the meeting to ensure state is consistent with server
+	meetingId, err := strconv.ParseInt(data.Id.ValueString(), 10, 64)
+	if err != nil {
+		resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse meeting ID: %s", err))
+		return
+	}
+
+	updatedMeeting, httpResp, err := r.client.Client.RootServerAPI.GetMeeting(r.client.Context, meetingId).Execute()
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read updated meeting, got error: %s", err))
+		return
+	}
+
+	if httpResp.StatusCode != 200 {
+		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d when reading updated meeting", httpResp.StatusCode))
+		return
+	}
+
+	// Update all fields from the server response
+	r.updateModelFromMeeting(data, updatedMeeting)
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -390,6 +411,7 @@ func (r *MeetingResource) ImportState(ctx context.Context, req resource.ImportSt
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
+
 // Helper function to update model from API response
 func (r *MeetingResource) updateModelFromMeeting(data *MeetingResourceModel, meeting *bmlt.Meeting) {
 	data.ServiceBodyId = types.Int64Value(int64(meeting.ServiceBodyId))
@@ -398,12 +420,12 @@ func (r *MeetingResource) updateModelFromMeeting(data *MeetingResourceModel, mee
 	data.Day = types.Int64Value(int64(meeting.Day))
 	data.StartTime = types.StringValue(meeting.StartTime)
 	data.Duration = types.StringValue(meeting.Duration)
-	data.TimeZone = types.StringValue(meeting.TimeZone)
+	data.TimeZone = nullableString(meeting.TimeZone)
 	data.Latitude = types.Float64Value(float64(meeting.Latitude))
 	data.Longitude = types.Float64Value(float64(meeting.Longitude))
 	data.Published = types.BoolValue(meeting.Published)
-	data.Email = types.StringValue(meeting.Email)
-	data.WorldId = types.StringValue(meeting.WorldId)
+	data.Email = nullableString(meeting.Email)
+	data.WorldId = nullableString(meeting.WorldId)
 	data.Name = types.StringValue(meeting.Name)
 	data.LocationText = types.StringPointerValue(meeting.LocationText)
 	data.LocationInfo = types.StringPointerValue(meeting.LocationInfo)

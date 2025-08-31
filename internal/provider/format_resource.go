@@ -151,8 +151,8 @@ func (r *FormatResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	// Map response back to model
 	data.Id = types.StringValue(strconv.Itoa(int(format.Id)))
-	data.WorldId = types.StringValue(format.WorldId)
-	data.Type = types.StringValue(format.Type)
+	data.WorldId = nullableString(format.WorldId)
+	data.Type = nullableString(format.Type)
 
 	// Update translations from response
 	var responseTranslations []FormatTranslationModel
@@ -209,8 +209,8 @@ func (r *FormatResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 
 	// Map response to model
-	data.WorldId = types.StringValue(format.WorldId)
-	data.Type = types.StringValue(format.Type)
+	data.WorldId = nullableString(format.WorldId)
+	data.Type = nullableString(format.Type)
 
 	// Update translations
 	var translations []FormatTranslationModel
@@ -278,6 +278,43 @@ func (r *FormatResource) Update(ctx context.Context, req resource.UpdateRequest,
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}
+
+	// Re-read the format to ensure state is consistent with server
+	formatId, err := strconv.ParseInt(data.Id.ValueString(), 10, 64)
+	if err != nil {
+		resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse format ID: %s", err))
+		return
+	}
+
+	updatedFormat, httpResp, err := r.client.Client.RootServerAPI.GetFormat(r.client.Context, formatId).Execute()
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read updated format, got error: %s", err))
+		return
+	}
+
+	if httpResp.StatusCode != 200 {
+		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d when reading updated format", httpResp.StatusCode))
+		return
+	}
+
+	// Update all fields from the server response
+	data.WorldId = nullableString(updatedFormat.WorldId)
+	data.Type = nullableString(updatedFormat.Type)
+
+	// Update translations from response
+	var responseTranslations []FormatTranslationModel
+	if updatedFormat.Translations != nil {
+		for _, t := range updatedFormat.Translations {
+			translationModel := FormatTranslationModel{
+				Key:         types.StringValue(t.Key),
+				Name:        types.StringValue(t.Name),
+				Description: types.StringValue(t.Description),
+				Language:    types.StringValue(t.Language),
+			}
+			responseTranslations = append(responseTranslations, translationModel)
+		}
+	}
+	data.Translations = responseTranslations
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
