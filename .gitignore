@@ -8,6 +8,7 @@
 *.so
 *.dylib
 t/
+terraform-provider-bmlt
 # Test binary, built with `go test -c`
 *.test
 *.tfstate*
