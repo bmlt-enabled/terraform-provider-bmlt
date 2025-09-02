@@ -49,7 +49,6 @@ linters:
       - third_party$
       - builtin$
       - examples$
-linters-settings:
 issues:
   max-same-issues: 0
 formatters:
