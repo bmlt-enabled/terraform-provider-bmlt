@@ -128,13 +128,13 @@ func (r *ServiceBodyResource) Create(ctx context.Context, req resource.CreateReq
 	// Convert assigned user IDs
 	var assignedUserIds []int32
 	for _, id := range data.AssignedUserIds {
-		assignedUserIds = append(assignedUserIds, int32(id.ValueInt64()))
+		assignedUserIds = append(assignedUserIds, safeInt64ToInt32(id.ValueInt64()))
 	}
 
 	// Create NullableInt32 for ParentId
 	var parentId bmlt.NullableInt32
 	if !data.ParentId.IsNull() {
-		parentId.Set(bmlt.PtrInt32(int32(data.ParentId.ValueInt64())))
+		parentId.Set(bmlt.PtrInt32(safeInt64ToInt32(data.ParentId.ValueInt64())))
 	}
 
 	// Convert model to API request
@@ -143,7 +143,7 @@ func (r *ServiceBodyResource) Create(ctx context.Context, req resource.CreateReq
 		Name:            data.Name.ValueString(),
 		Description:     data.Description.ValueString(),
 		Type:            data.Type.ValueString(),
-		AdminUserId:     int32(data.AdminUserId.ValueInt64()),
+		AdminUserId:     safeInt64ToInt32(data.AdminUserId.ValueInt64()),
 		AssignedUserIds: assignedUserIds,
 		Url:             data.Url.ValueStringPointer(),
 		Helpline:        data.Helpline.ValueStringPointer(),
@@ -158,7 +158,7 @@ func (r *ServiceBodyResource) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
-	if httpResp.StatusCode != 201 {
+	if httpResp.StatusCode != HTTPStatusCreated {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}
@@ -190,12 +190,12 @@ func (r *ServiceBodyResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	if httpResp.StatusCode == 404 {
+	if httpResp.StatusCode == HTTPStatusNotFound {
 		resp.State.RemoveResource(ctx)
 		return
 	}
 
-	if httpResp.StatusCode != 200 {
+	if httpResp.StatusCode != HTTPStatusOK {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}
@@ -221,13 +221,13 @@ func (r *ServiceBodyResource) Update(ctx context.Context, req resource.UpdateReq
 	// Convert assigned user IDs
 	var assignedUserIds []int32
 	for _, id := range data.AssignedUserIds {
-		assignedUserIds = append(assignedUserIds, int32(id.ValueInt64()))
+		assignedUserIds = append(assignedUserIds, safeInt64ToInt32(id.ValueInt64()))
 	}
 
 	// Create NullableInt32 for ParentId
 	var parentId bmlt.NullableInt32
 	if !data.ParentId.IsNull() {
-		parentId.Set(bmlt.PtrInt32(int32(data.ParentId.ValueInt64())))
+		parentId.Set(bmlt.PtrInt32(safeInt64ToInt32(data.ParentId.ValueInt64())))
 	}
 
 	updateRequest := bmlt.ServiceBodyUpdate{
@@ -235,7 +235,7 @@ func (r *ServiceBodyResource) Update(ctx context.Context, req resource.UpdateReq
 		Name:            data.Name.ValueString(),
 		Description:     data.Description.ValueString(),
 		Type:            data.Type.ValueString(),
-		AdminUserId:     int32(data.AdminUserId.ValueInt64()),
+		AdminUserId:     safeInt64ToInt32(data.AdminUserId.ValueInt64()),
 		AssignedUserIds: assignedUserIds,
 		Url:             data.Url.ValueStringPointer(),
 		Helpline:        data.Helpline.ValueStringPointer(),
@@ -249,7 +249,7 @@ func (r *ServiceBodyResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	if httpResp.StatusCode != 204 {
+	if httpResp.StatusCode != HTTPStatusNoContent {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}
@@ -267,7 +267,7 @@ func (r *ServiceBodyResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	if httpResp.StatusCode != 200 {
+	if httpResp.StatusCode != HTTPStatusOK {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d when reading updated service body", httpResp.StatusCode))
 		return
 	}
@@ -298,7 +298,7 @@ func (r *ServiceBodyResource) Delete(ctx context.Context, req resource.DeleteReq
 		return
 	}
 
-	if httpResp.StatusCode != 204 {
+	if httpResp.StatusCode != HTTPStatusNoContent {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}

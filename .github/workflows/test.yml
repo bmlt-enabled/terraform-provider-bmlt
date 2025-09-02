@@ -22,10 +22,6 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
-          cache: true
-          cache-dependency-path: |
-            go.sum
-            go.mod
 
       - name: Get dependencies
         run: |
@@ -40,7 +36,6 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.out
           flags: unittests
           name: codecov-umbrella
           slug: bmlt-enabled/terraform-provider-bmlt
@@ -57,10 +52,6 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.22.x'
-          cache: true
-          cache-dependency-path: |
-            go.sum
-            go.mod
 
       - name: Get dependencies
         run: |

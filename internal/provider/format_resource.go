@@ -88,7 +88,8 @@ func (r *FormatResource) Schema(ctx context.Context, req resource.SchemaRequest,
 	}
 }
 
-func (r *FormatResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *FormatResource) Configure(ctx context.Context, req resource.ConfigureRequest,
+	resp *resource.ConfigureResponse) {
 	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
@@ -99,7 +100,7 @@ func (r *FormatResource) Configure(ctx context.Context, req resource.ConfigureRe
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *BMTLClientData, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			clientTypeError(req.ProviderData),
 		)
 
 		return
@@ -138,13 +139,14 @@ func (r *FormatResource) Create(ctx context.Context, req resource.CreateRequest,
 	createRequest.Translations = translations
 
 	// Create format
-	format, httpResp, err := r.client.Client.RootServerAPI.CreateFormat(r.client.Context).FormatCreate(createRequest).Execute()
+	format, httpResp, err := r.client.Client.RootServerAPI.CreateFormat(r.client.Context).
+		FormatCreate(createRequest).Execute()
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create format, got error: %s", err))
 		return
 	}
 
-	if httpResp.StatusCode != 201 {
+	if httpResp.StatusCode != HTTPStatusCreated {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}
@@ -197,13 +199,13 @@ func (r *FormatResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	if httpResp.StatusCode == 404 {
+	if httpResp.StatusCode == HTTPStatusNotFound {
 		// Format was deleted outside of Terraform
 		resp.State.RemoveResource(ctx)
 		return
 	}
 
-	if httpResp.StatusCode != 200 {
+	if httpResp.StatusCode != HTTPStatusOK {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}
@@ -274,7 +276,7 @@ func (r *FormatResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	if httpResp.StatusCode != 204 {
+	if httpResp.StatusCode != HTTPStatusNoContent {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}
@@ -292,8 +294,9 @@ func (r *FormatResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	if httpResp.StatusCode != 200 {
-		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d when reading updated format", httpResp.StatusCode))
+	if httpResp.StatusCode != HTTPStatusOK {
+		resp.Diagnostics.AddError("API Error",
+			fmt.Sprintf("API returned status %d when reading updated format", httpResp.StatusCode))
 		return
 	}
 
@@ -344,12 +347,13 @@ func (r *FormatResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	if httpResp.StatusCode != 204 {
+	if httpResp.StatusCode != HTTPStatusNoContent {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}
 }
 
-func (r *FormatResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *FormatResource) ImportState(ctx context.Context, req resource.ImportStateRequest,
+	resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

@@ -140,7 +140,7 @@ func (d *ServiceBodiesDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	if httpResp.StatusCode != 200 {
+	if httpResp.StatusCode != HTTPStatusOK {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}

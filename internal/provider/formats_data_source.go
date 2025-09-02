@@ -41,7 +41,8 @@ type FormatTranslationModel struct {
 	Language    types.String `tfsdk:"language"`
 }
 
-func (d *FormatsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *FormatsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest,
+	resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_formats"
 }
 
@@ -103,7 +104,8 @@ func (d *FormatsDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 	}
 }
 
-func (d *FormatsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *FormatsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest,
+	resp *datasource.ConfigureResponse) {
 	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
@@ -114,7 +116,7 @@ func (d *FormatsDataSource) Configure(ctx context.Context, req datasource.Config
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Data Source Configure Type",
-			fmt.Sprintf("Expected *BMTLClientData, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			clientTypeError(req.ProviderData),
 		)
 
 		return
@@ -140,7 +142,7 @@ func (d *FormatsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	if httpResp.StatusCode != 200 {
+	if httpResp.StatusCode != HTTPStatusOK {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}

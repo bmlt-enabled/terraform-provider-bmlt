@@ -224,9 +224,7 @@ func (p *BMTProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		if !strings.HasPrefix(basePath, "/") {
 			basePath = "/" + basePath
 		}
-		if strings.HasSuffix(basePath, "/") {
-			basePath = basePath[:len(basePath)-1]
-		}
+		basePath = strings.TrimSuffix(basePath, "/")
 	}
 
 	// Create BMLT client configuration

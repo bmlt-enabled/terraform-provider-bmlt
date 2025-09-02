@@ -123,7 +123,7 @@ func (r *UserResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 	// Handle optional OwnerId
 	if !data.OwnerId.IsNull() {
-		createRequest.OwnerId = bmlt.PtrInt32(int32(data.OwnerId.ValueInt64()))
+		createRequest.OwnerId = bmlt.PtrInt32(safeInt64ToInt32(data.OwnerId.ValueInt64()))
 	}
 
 	// Create user
@@ -133,7 +133,7 @@ func (r *UserResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 
-	if httpResp.StatusCode != 201 {
+	if httpResp.StatusCode != HTTPStatusCreated {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}
@@ -165,12 +165,12 @@ func (r *UserResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 		return
 	}
 
-	if httpResp.StatusCode == 404 {
+	if httpResp.StatusCode == HTTPStatusNotFound {
 		resp.State.RemoveResource(ctx)
 		return
 	}
 
-	if httpResp.StatusCode != 200 {
+	if httpResp.StatusCode != HTTPStatusOK {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}
@@ -205,7 +205,7 @@ func (r *UserResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
 	// Handle optional OwnerId
 	if !data.OwnerId.IsNull() {
-		updateRequest.OwnerId = bmlt.PtrInt32(int32(data.OwnerId.ValueInt64()))
+		updateRequest.OwnerId = bmlt.PtrInt32(safeInt64ToInt32(data.OwnerId.ValueInt64()))
 	}
 
 	httpResp, err := r.client.Client.RootServerAPI.UpdateUser(r.client.Context, id).UserUpdate(updateRequest).Execute()
@@ -214,7 +214,7 @@ func (r *UserResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		return
 	}
 
-	if httpResp.StatusCode != 204 {
+	if httpResp.StatusCode != HTTPStatusNoContent {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}
@@ -232,7 +232,7 @@ func (r *UserResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		return
 	}
 
-	if httpResp.StatusCode != 200 {
+	if httpResp.StatusCode != HTTPStatusOK {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d when reading updated user", httpResp.StatusCode))
 		return
 	}
@@ -263,7 +263,7 @@ func (r *UserResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 		return
 	}
 
-	if httpResp.StatusCode != 204 {
+	if httpResp.StatusCode != HTTPStatusNoContent {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}

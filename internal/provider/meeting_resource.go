@@ -181,7 +181,8 @@ func (r *MeetingResource) Schema(ctx context.Context, req resource.SchemaRequest
 	}
 }
 
-func (r *MeetingResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *MeetingResource) Configure(ctx context.Context, req resource.ConfigureRequest,
+	resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -190,7 +191,7 @@ func (r *MeetingResource) Configure(ctx context.Context, req resource.ConfigureR
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *BMTLClientData, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			clientTypeError(req.ProviderData),
 		)
 		return
 	}
@@ -209,16 +210,16 @@ func (r *MeetingResource) Create(ctx context.Context, req resource.CreateRequest
 	// Convert format IDs
 	var formatIds []int32
 	for _, id := range data.FormatIds {
-		formatIds = append(formatIds, int32(id.ValueInt64()))
+		formatIds = append(formatIds, safeInt64ToInt32(id.ValueInt64()))
 	}
 
 	// Convert model to API request
 	createRequest := bmlt.MeetingCreate{
-		ServiceBodyId:        int32(data.ServiceBodyId.ValueInt64()),
+		ServiceBodyId:        safeInt64ToInt32(data.ServiceBodyId.ValueInt64()),
 		FormatIds:            formatIds,
-		VenueType:            int32(data.VenueType.ValueInt64()),
+		VenueType:            safeInt64ToInt32(data.VenueType.ValueInt64()),
 		TemporarilyVirtual:   data.TemporarilyVirtual.ValueBoolPointer(),
-		Day:                  int32(data.Day.ValueInt64()),
+		Day:                  safeInt64ToInt32(data.Day.ValueInt64()),
 		StartTime:            data.StartTime.ValueString(),
 		Duration:             data.Duration.ValueString(),
 		TimeZone:             data.TimeZone.ValueStringPointer(),
@@ -243,13 +244,14 @@ func (r *MeetingResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	// Create meeting
-	meeting, httpResp, err := r.client.Client.RootServerAPI.CreateMeeting(r.client.Context).MeetingCreate(createRequest).Execute()
+	meeting, httpResp, err := r.client.Client.RootServerAPI.CreateMeeting(r.client.Context).
+		MeetingCreate(createRequest).Execute()
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create meeting, got error: %s", err))
 		return
 	}
 
-	if httpResp.StatusCode != 201 {
+	if httpResp.StatusCode != HTTPStatusCreated {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}
@@ -283,12 +285,12 @@ func (r *MeetingResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	if httpResp.StatusCode == 404 {
+	if httpResp.StatusCode == HTTPStatusNotFound {
 		resp.State.RemoveResource(ctx)
 		return
 	}
 
-	if httpResp.StatusCode != 200 {
+	if httpResp.StatusCode != HTTPStatusOK {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}
@@ -314,15 +316,15 @@ func (r *MeetingResource) Update(ctx context.Context, req resource.UpdateRequest
 	// Convert format IDs
 	var formatIds []int32
 	for _, id := range data.FormatIds {
-		formatIds = append(formatIds, int32(id.ValueInt64()))
+		formatIds = append(formatIds, safeInt64ToInt32(id.ValueInt64()))
 	}
 
 	updateRequest := bmlt.MeetingUpdate{
-		ServiceBodyId:        int32(data.ServiceBodyId.ValueInt64()),
+		ServiceBodyId:        safeInt64ToInt32(data.ServiceBodyId.ValueInt64()),
 		FormatIds:            formatIds,
-		VenueType:            int32(data.VenueType.ValueInt64()),
+		VenueType:            safeInt64ToInt32(data.VenueType.ValueInt64()),
 		TemporarilyVirtual:   data.TemporarilyVirtual.ValueBoolPointer(),
-		Day:                  int32(data.Day.ValueInt64()),
+		Day:                  safeInt64ToInt32(data.Day.ValueInt64()),
 		StartTime:            data.StartTime.ValueString(),
 		Duration:             data.Duration.ValueString(),
 		TimeZone:             data.TimeZone.ValueStringPointer(),
@@ -346,13 +348,14 @@ func (r *MeetingResource) Update(ctx context.Context, req resource.UpdateRequest
 		Comments:             data.Comments.ValueStringPointer(),
 	}
 
-	httpResp, err := r.client.Client.RootServerAPI.UpdateMeeting(r.client.Context, id).MeetingUpdate(updateRequest).Execute()
+	httpResp, err := r.client.Client.RootServerAPI.UpdateMeeting(r.client.Context, id).
+		MeetingUpdate(updateRequest).Execute()
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update meeting, got error: %s", err))
 		return
 	}
 
-	if httpResp.StatusCode != 204 {
+	if httpResp.StatusCode != HTTPStatusNoContent {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}
@@ -370,7 +373,7 @@ func (r *MeetingResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	if httpResp.StatusCode != 200 {
+	if httpResp.StatusCode != HTTPStatusOK {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d when reading updated meeting", httpResp.StatusCode))
 		return
 	}
@@ -401,7 +404,7 @@ func (r *MeetingResource) Delete(ctx context.Context, req resource.DeleteRequest
 		return
 	}
 
-	if httpResp.StatusCode != 204 {
+	if httpResp.StatusCode != HTTPStatusNoContent {
 		resp.Diagnostics.AddError("API Error", fmt.Sprintf("API returned status %d", httpResp.StatusCode))
 		return
 	}
