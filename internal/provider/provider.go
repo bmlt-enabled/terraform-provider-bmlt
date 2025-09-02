@@ -308,6 +308,8 @@ func (p *BMTProvider) DataSources(ctx context.Context) []func() datasource.DataS
 		NewFormatsDataSource,
 		NewMeetingsDataSource,
 		NewServiceBodiesDataSource,
+		NewServiceBodyDataSource,
+		NewUserDataSource,
 		NewUsersDataSource,
 	}
 }
