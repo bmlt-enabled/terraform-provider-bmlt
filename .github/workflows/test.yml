@@ -17,28 +17,34 @@ jobs:
         go-version: ['1.21.x', '1.22.x']
 
     steps:
-    - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
 
-    - uses: actions/setup-go@v5
-      with:
-        go-version: ${{ matrix.go-version }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            go.mod
 
-    - name: Get dependencies
-      run: |
-        go mod download
+      - name: Get dependencies
+        run: |
+          go mod download
 
-    - name: Build
-      run: go build -v .
+      - name: Build
+        run: go build -v .
 
-    - name: Run tests
-      run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+      - name: Run tests
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.out
-        flags: unittests
-        name: codecov-umbrella
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          file: ./coverage.out
+          flags: unittests
+          name: codecov-umbrella
+          slug: bmlt-enabled/terraform-provider-bmlt
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   acceptance:
     name: Acceptance Tests
@@ -46,22 +52,26 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
 
-    - uses: actions/setup-go@v5
-      with:
-        go-version: '1.22.x'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            go.mod
 
-    - name: Get dependencies
-      run: |
-        go mod download
+      - name: Get dependencies
+        run: |
+          go mod download
 
-    - name: TF acceptance tests
-      timeout-minutes: 45
-      env:
-        TF_ACC: "1"
-        # Add your BMLT test server credentials here if needed
-        # BMLT_HOST: ${{ secrets.BMLT_HOST }}
-        # BMLT_USERNAME: ${{ secrets.BMLT_USERNAME }}
-        # BMLT_PASSWORD: ${{ secrets.BMLT_PASSWORD }}
-      run: go test -v -cover ./internal/provider/
+      - name: TF acceptance tests
+        timeout-minutes: 45
+        env:
+          TF_ACC: "1"
+          # Add your BMLT test server credentials here if needed
+          # BMLT_HOST: ${{ secrets.BMLT_HOST }}
+          # BMLT_USERNAME: ${{ secrets.BMLT_USERNAME }}
+          # BMLT_PASSWORD: ${{ secrets.BMLT_PASSWORD }}
+        run: go test -v -cover ./internal/provider/
