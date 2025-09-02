@@ -45,8 +45,6 @@ linters:
     - unparam
     - unused  # This replaces deadcode, varcheck, and structcheck
     - whitespace
-
-linters:
   settings:
     govet:
       check-shadowing: true

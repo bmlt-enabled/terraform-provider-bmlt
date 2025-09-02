@@ -411,7 +411,6 @@ func (r *MeetingResource) ImportState(ctx context.Context, req resource.ImportSt
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-
 // Helper function to update model from API response
 func (r *MeetingResource) updateModelFromMeeting(data *MeetingResourceModel, meeting *bmlt.Meeting) {
 	data.ServiceBodyId = types.Int64Value(int64(meeting.ServiceBodyId))

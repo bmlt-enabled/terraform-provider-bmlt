@@ -308,7 +308,6 @@ func (r *ServiceBodyResource) ImportState(ctx context.Context, req resource.Impo
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-
 // Helper function to update model from API response
 func (r *ServiceBodyResource) updateModelFromServiceBody(data *ServiceBodyResourceModel, serviceBody *bmlt.ServiceBody) {
 	// Handle nullable ParentId

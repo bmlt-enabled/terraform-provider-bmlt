@@ -273,7 +273,6 @@ func (r *UserResource) ImportState(ctx context.Context, req resource.ImportState
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-
 // Helper function to update model from API response
 func (r *UserResource) updateModelFromUser(data *UserResourceModel, user *bmlt.User) {
 	data.Username = types.StringValue(user.Username)
