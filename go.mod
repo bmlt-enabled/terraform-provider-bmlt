@@ -1,6 +1,6 @@
 module github.com/bmlt-enabled/terraform-provider-bmlt
 
-go 1.24.3
+go 1.24.4
 
 require (
 	github.com/bmlt-enabled/bmlt-server-go-client v1.2.0
