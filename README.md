@@ -92,8 +92,10 @@ curl -X POST "https://your-server.com/main_server/api/v1/auth/token" \
 ### 3. Basic Usage Example
 
 ```hcl
-# Query existing data
-data "bmlt_formats" "all" {}
+# Query existing formats with language filtering for easy access
+data "bmlt_formats" "english" {
+  language = "en"  # This populates the formats_by_key map
+}
 
 # Create a custom format
 resource "bmlt_format" "custom_format" {
@@ -126,10 +128,14 @@ resource "bmlt_service_body" "area" {
   assigned_user_ids = [bmlt_user.service_admin.id]
 }
 
-# Create a meeting
+# Create a meeting using format keys (much simpler than before!)
 resource "bmlt_meeting" "example" {
   service_body_id = bmlt_service_body.area.id
-  format_ids      = [data.bmlt_formats.all.formats[0].id]
+  format_ids = [
+    data.bmlt_formats.english.formats_by_key["O"].id,   # Open
+    data.bmlt_formats.english.formats_by_key["D"].id,   # Discussion  
+    data.bmlt_formats.english.formats_by_key["BT"].id,  # Basic Text
+  ]
   venue_type      = 1 # In-person
   day             = 1 # Monday
   start_time      = "19:00"
@@ -250,11 +256,35 @@ resource "bmlt_meeting" "example" {
 ### `bmlt_formats`
 Retrieve information about all available meeting formats.
 
+**Basic usage (all formats):**
 ```hcl
 data "bmlt_formats" "all" {}
 
 output "format_count" {
   value = length(data.bmlt_formats.all.formats)
+}
+```
+
+**Language-filtered formats (recommended):**
+```hcl
+# Get formats with language filtering and convenient key-based access
+data "bmlt_formats" "english" {
+  language = "en"  # Populates formats_by_key map
+}
+
+# Easy access to specific formats by their key
+resource "bmlt_meeting" "example" {
+  format_ids = [
+    data.bmlt_formats.english.formats_by_key["O"].id,   # Open
+    data.bmlt_formats.english.formats_by_key["D"].id,   # Discussion
+    data.bmlt_formats.english.formats_by_key["WC"].id,  # Wheelchair Accessible
+  ]
+  # ... other meeting attributes
+}
+
+# Get all available format keys
+output "available_format_keys" {
+  value = keys(data.bmlt_formats.english.formats_by_key)
 }
 ```
 

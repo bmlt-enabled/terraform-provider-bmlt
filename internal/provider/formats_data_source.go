@@ -23,8 +23,10 @@ type FormatsDataSource struct {
 
 // FormatsDataSourceModel describes the data source data model.
 type FormatsDataSourceModel struct {
-	Formats []FormatModel `tfsdk:"formats"`
-	Id      types.String  `tfsdk:"id"`
+	Formats      []FormatModel               `tfsdk:"formats"`
+	FormatsByKey map[string]FormatByKeyModel `tfsdk:"formats_by_key"`
+	Language     types.String                `tfsdk:"language"`
+	Id           types.String                `tfsdk:"id"`
 }
 
 type FormatModel struct {
@@ -41,6 +43,15 @@ type FormatTranslationModel struct {
 	Language    types.String `tfsdk:"language"`
 }
 
+type FormatByKeyModel struct {
+	Id          types.Int64  `tfsdk:"id"`
+	Name        types.String `tfsdk:"name"`
+	Description types.String `tfsdk:"description"`
+	Type        types.String `tfsdk:"type"`
+	WorldId     types.String `tfsdk:"world_id"`
+	Key         types.String `tfsdk:"key"`
+}
+
 func (d *FormatsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest,
 	resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_formats"
@@ -55,6 +66,10 @@ func (d *FormatsDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Placeholder identifier for the data source.",
 				Computed:            true,
+			},
+			"language": schema.StringAttribute{
+				MarkdownDescription: "Language code to filter formats by (e.g., 'en'). When specified, also populates the formats_by_key map.",
+				Optional:            true,
 			},
 			"formats": schema.ListNestedAttribute{
 				MarkdownDescription: "List of formats",
@@ -96,6 +111,38 @@ func (d *FormatsDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 									},
 								},
 							},
+						},
+					},
+				},
+			},
+			"formats_by_key": schema.MapNestedAttribute{
+				MarkdownDescription: "Map of formats keyed by their language-specific key (only populated when language parameter is specified)",
+				Computed:            true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.Int64Attribute{
+							MarkdownDescription: "Format identifier",
+							Computed:            true,
+						},
+						"name": schema.StringAttribute{
+							MarkdownDescription: "Format name",
+							Computed:            true,
+						},
+						"description": schema.StringAttribute{
+							MarkdownDescription: "Format description",
+							Computed:            true,
+						},
+						"type": schema.StringAttribute{
+							MarkdownDescription: "Format type",
+							Computed:            true,
+						},
+						"world_id": schema.StringAttribute{
+							MarkdownDescription: "World identifier for the format",
+							Computed:            true,
+						},
+						"key": schema.StringAttribute{
+							MarkdownDescription: "Translation key",
+							Computed:            true,
 						},
 					},
 				},
@@ -148,6 +195,10 @@ func (d *FormatsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	}
 
 	// Map response body to model
+	formatsByKeyMap := make(map[string]FormatByKeyModel)
+	seenKeys := make(map[string]bool)
+	languageFilter := data.Language.ValueString()
+
 	for _, format := range formats {
 		formatModel := FormatModel{
 			Id:      types.Int64Value(int64(format.Id)),
@@ -166,11 +217,32 @@ func (d *FormatsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 					Language:    types.StringValue(translation.Language),
 				}
 				translations = append(translations, translationModel)
+
+				// If language filter is specified and matches, add to formats_by_key map
+				if languageFilter != "" && translation.Language == languageFilter {
+					// Only add if we haven't seen this key before (avoid duplicates)
+					if !seenKeys[translation.Key] {
+						formatsByKeyMap[translation.Key] = FormatByKeyModel{
+							Id:          types.Int64Value(int64(format.Id)),
+							Name:        types.StringValue(translation.Name),
+							Description: types.StringValue(translation.Description),
+							Type:        types.StringValue(format.Type),
+							WorldId:     types.StringValue(format.WorldId),
+							Key:         types.StringValue(translation.Key),
+						}
+						seenKeys[translation.Key] = true
+					}
+				}
 			}
 		}
 		formatModel.Translations = translations
 
 		data.Formats = append(data.Formats, formatModel)
+	}
+
+	// Set the formats_by_key map if language filter was specified
+	if languageFilter != "" {
+		data.FormatsByKey = formatsByKeyMap
 	}
 
 	// Set ID for the data source
