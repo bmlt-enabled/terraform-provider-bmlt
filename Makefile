@@ -10,10 +10,13 @@ LDFLAGS=-X $(GIT_IMPORT).GitCommit=$(GIT_COMMIT)$(GIT_DIRTY) -X $(GIT_IMPORT).Gi
 
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 
-build: fmtcheck
+help:  ## Print the help documentation
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
+build: fmtcheck  ## Build
 	go install -ldflags "$(LDFLAGS)"
 
-test: fmtcheck
+test: fmtcheck  ## Test
 	go test -i $(TEST) || exit 1
 	echo $(TEST) | \
 		xargs -t -n4 go test $(TESTARGS) -timeout=30s -parallel=4
@@ -30,7 +33,7 @@ vet:
 		exit 1; \
 	fi
 
-fmt:
+fmt:  ## Format
 	gofmt -w $(GOFMT_FILES)
 
 fmtcheck:

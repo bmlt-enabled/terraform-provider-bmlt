@@ -1,55 +1,55 @@
 # Terraform Provider for BMLT
 
-This Terraform provider allows you to manage BMLT (Basic Meeting List Toolbox) resources using Infrastructure as Code.
+[![Go Report Card](https://goreportcard.com/badge/github.com/bmlt-enabled/terraform-provider-bmlt)](https://goreportcard.com/report/github.com/bmlt-enabled/terraform-provider-bmlt)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub release](https://img.shields.io/github/release/bmlt-enabled/terraform-provider-bmlt.svg)](https://github.com/bmlt-enabled/terraform-provider-bmlt/releases)
+
+A Terraform provider for managing [BMLT (Basic Meeting List Toolbox)](https://bmlt.app) resources through Infrastructure as Code.
+
+## Features
+
+This provider allows you to manage BMLT server resources including:
+
+- **Meetings** - Create, update, and manage 12 step meetings with location, time, and format assignments
+- **Formats** - Manage meeting formats (e.g., "Open", "Closed") with multi-language translations
+- **Service Bodies** - Organize areas, regions, and other organizational units with user assignments
+- **Users** - Manage BMLT server users with different permission levels
 
 ## Requirements
 
-- [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.0
-- [Go](https://golang.org/doc/install) >= 1.23
+- [Terraform](https://www.terraform.io/downloads.html) >= 1.0
+- Go >= 1.24.4 (for development)
+- Access to a BMLT server with API credentials
 
-## Building The Provider
+## Quick Start
 
-1. Clone the repository
-2. Enter the provider directory: `cd terraform-provider-bmlt`
-3. Build the provider using the Go `install` command:
+### 1. Configure the Provider
 
-```shell
-go install
+Add the provider to your Terraform configuration:
+
+```hcl
+terraform {
+  required_providers {
+    bmlt = {
+      source  = "bmlt-enabled/bmlt"
+      version = "~> 1.0"
+    }
+  }
+}
+
+provider "bmlt" {
+  host     = "https://your-bmlt-server.com/main_server"
+  username = var.bmlt_username
+  password = var.bmlt_password
+}
 ```
 
-## Adding Dependencies
+### 2. Authentication Methods
 
-This provider uses [Go modules](https://github.com/golang/go/wiki/Modules).
-Please see the Go documentation for the most up to date information about using Go modules.
+#### Method 1: Username/Password (OAuth2 Flow)
+The provider exchanges your credentials for an OAuth2 access token automatically.
 
-To add a new dependency `github.com/author/dependency` to your Terraform provider:
-
-```shell
-go get github.com/author/dependency
-go mod tidy
-```
-
-Then commit the changes to `go.mod` and `go.sum`.
-
-## Using the Provider
-
-First, build and install the provider.
-
-```shell
-make install
-```
-
-Then, run the following command to initialize the workspace and apply the sample configuration.
-
-```shell
-terraform init && terraform apply
-```
-
-## Provider Configuration
-
-The provider can be configured in three ways:
-
-1. **Provider block configuration** (recommended for development):
+**Using provider block:**
 ```hcl
 provider "bmlt" {
   host     = "https://bmlt.example.com/main_server"
@@ -58,48 +58,78 @@ provider "bmlt" {
 }
 ```
 
-2. **Environment variables** (recommended for production):
+**Using environment variables (recommended for production):**
 ```bash
 export BMLT_HOST="https://bmlt.example.com/main_server"
 export BMLT_USERNAME="your_username"
 export BMLT_PASSWORD="your_password"
 ```
 
-3. **Terraform variables**:
+#### Method 2: Access Token (Direct)
+Use a pre-generated OAuth2 access token directly - ideal for CI/CD pipelines.
+
+**Using provider block:**
 ```hcl
 provider "bmlt" {
-  host     = var.bmlt_host
-  username = var.bmlt_username
-  password = var.bmlt_password
+  host         = "https://bmlt.example.com/main_server"
+  access_token = "your_oauth2_access_token"
 }
 ```
 
-## Available Resources
+**Using environment variables:**
+```bash
+export BMLT_HOST="https://bmlt.example.com/main_server"
+export BMLT_ACCESS_TOKEN="your_oauth2_access_token"
+```
 
-### bmlt_format
-Manages meeting formats.
+**Generate Access Token:**
+```bash
+curl -X POST "https://your-server.com/main_server/api/v1/auth/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=password&username=your_username&password=your_password"
+```
+
+### 3. Basic Usage Example
 
 ```hcl
-resource "bmlt_format" "example" {
-  world_id = "CUSTOM_FORMAT"
+# Query existing data
+data "bmlt_formats" "all" {}
+
+# Create a custom format
+resource "bmlt_format" "custom_format" {
+  world_id = "CUSTOM"
   type     = "FC3"
 
   translations {
     key         = "en"
     name        = "Custom Format"
-    description = "This is a custom format for our region"
+    description = "A custom meeting format"
     language    = "en"
   }
 }
-```
 
-### bmlt_meeting
-Manages meetings.
+# Create a user
+resource "bmlt_user" "service_admin" {
+  username     = "terraform_admin"
+  password     = "SecurePassword123!"
+  type         = "serviceBodyAdmin"
+  display_name = "Terraform Admin"
+  email        = "admin@example.com"
+}
 
-```hcl
+# Create a service body
+resource "bmlt_service_body" "area" {
+  name              = "Terraform Area"
+  description       = "An area managed by Terraform"
+  type              = "AS"
+  admin_user_id     = bmlt_user.service_admin.id
+  assigned_user_ids = [bmlt_user.service_admin.id]
+}
+
+# Create a meeting
 resource "bmlt_meeting" "example" {
-  service_body_id = 1
-  format_ids      = [1, 2, 3]
+  service_body_id = bmlt_service_body.area.id
+  format_ids      = [data.bmlt_formats.all.formats[0].id]
   venue_type      = 1 # In-person
   day             = 1 # Monday
   start_time      = "19:00"
@@ -107,40 +137,118 @@ resource "bmlt_meeting" "example" {
   latitude        = 40.7128
   longitude       = -74.0060
   published       = true
-  name            = "Monday Night Group"
+  name            = "Example Meeting"
+  
+  location_text         = "Community Center"
+  location_street       = "123 Main St"
+  location_municipality = "Anytown"
+  location_province     = "NY"
+  location_postal_code_1 = "12345"
 }
 ```
 
-### bmlt_service_body
-Manages service bodies.
+## Resources
+
+### `bmlt_format`
+Manages meeting formats with multi-language translations.
 
 ```hcl
-resource "bmlt_service_body" "example" {
-  name            = "Example Area"
-  description     = "Example Area Service Body"
-  type            = "AS"
-  admin_user_id   = 1
-  assigned_user_ids = [1, 2]
+resource "bmlt_format" "example" {
+  world_id = "EXAMPLE"
+  type     = "FC3"
+
+  translations {
+    key         = "en"
+    name        = "Example Format"
+    description = "An example meeting format"
+    language    = "en"
+  }
+
+  translations {
+    key         = "es"
+    name        = "Formato de Ejemplo"
+    description = "Un formato de reunión de ejemplo"
+    language    = "es"
+  }
 }
 ```
 
-### bmlt_user
-Manages users.
+### `bmlt_user`
+Manages BMLT server users with different permission levels.
 
 ```hcl
 resource "bmlt_user" "example" {
   username     = "example_user"
-  password     = "secure_password"
+  password     = "SecurePassword123!"
   type         = "serviceBodyAdmin"
   display_name = "Example User"
+  description  = "An example user account"
   email        = "user@example.com"
+  owner_id     = 1 # Optional: ID of the user who owns this account
 }
 ```
 
-## Available Data Sources
+### `bmlt_service_body`
+Manages organizational units like areas and regions.
 
-### bmlt_formats
-Retrieves all available formats.
+```hcl
+resource "bmlt_service_body" "example" {
+  name              = "Example Area"
+  description       = "An example area service body"
+  type              = "AS" # Area Service
+  admin_user_id     = bmlt_user.example.id
+  assigned_user_ids = [bmlt_user.example.id]
+  email             = "area@example.com"
+  url               = "https://example.com/area"
+  helpline          = "555-HELP"
+  parent_id         = 1 # Optional: Parent service body ID
+}
+```
+
+### `bmlt_meeting`
+Manages NA/AA meetings with comprehensive location and contact information.
+
+```hcl
+resource "bmlt_meeting" "example" {
+  service_body_id        = bmlt_service_body.example.id
+  format_ids             = [1, 2, 3]
+  venue_type             = 1 # 1=in-person, 2=virtual, 3=hybrid
+  temporarily_virtual    = false
+  day                    = 1 # 0=Sunday, 1=Monday, etc.
+  start_time             = "19:00"
+  duration               = "01:30"
+  time_zone              = "America/New_York"
+  latitude               = 40.7128
+  longitude              = -74.0060
+  published              = true
+  name                   = "Example Meeting"
+  
+  # Location details
+  location_text          = "Community Center Room A"
+  location_info          = "Enter through main entrance"
+  location_street        = "123 Main Street"
+  location_municipality  = "Anytown"
+  location_province      = "NY"
+  location_postal_code_1 = "12345"
+  location_nation        = "USA"
+  
+  # Virtual meeting details (if applicable)
+  virtual_meeting_link   = "https://zoom.us/j/123456789"
+  
+  # Contact information
+  contact_name_1         = "John Doe"
+  contact_phone_1        = "555-0123"
+  contact_email_1        = "john@example.com"
+  
+  # Additional information
+  comments               = "Wheelchair accessible"
+}
+```
+
+## Data Sources
+
+### `bmlt_formats`
+Retrieve information about all available meeting formats.
 
 ```hcl
 data "bmlt_formats" "all" {}
@@ -150,61 +258,38 @@ output "format_count" {
 }
 ```
 
-### bmlt_meetings
-Retrieves meetings with optional filtering.
+### `bmlt_meetings`
+Query meetings with optional filtering.
 
 ```hcl
-# Get all meetings
-data "bmlt_meetings" "all" {}
-
-# Get meetings for specific service bodies
-data "bmlt_meetings" "service_body_meetings" {
-  service_body_ids = "1,2,3"
+data "bmlt_meetings" "monday_meetings" {
+  days = "1" # Monday only
 }
 
-# Get weekend meetings
-data "bmlt_meetings" "weekend_meetings" {
-  days = "0,6" # Sunday and Saturday
+data "bmlt_meetings" "area_meetings" {
+  service_body_ids = "5,6,7"
 }
 ```
 
-### bmlt_service_bodies
-Retrieves all service bodies.
+### `bmlt_service_bodies`
+Retrieve information about all service bodies.
 
 ```hcl
 data "bmlt_service_bodies" "all" {}
 ```
 
-### bmlt_users
-Retrieves all users.
+### `bmlt_users`
+Retrieve information about all users.
 
 ```hcl
 data "bmlt_users" "all" {}
 ```
 
-## Authentication
-
-This provider uses OAuth2 password flow authentication. The provider will automatically:
-
-1. Exchange your username/password for an access token
-2. Handle token refresh automatically
-3. Include the token in all API requests
-
-## Error Handling
-
-The provider includes comprehensive error handling for:
-
-- Authentication errors (401)
-- Authorization errors (403)
-- Resource not found errors (404)
-- Validation errors (422)
-- Server errors (500)
-
 ## Import Support
 
-All resources support Terraform import using their ID:
+All resources support Terraform import using their numeric ID:
 
-```shell
+```bash
 terraform import bmlt_format.example 123
 terraform import bmlt_meeting.example 456
 terraform import bmlt_service_body.example 789
@@ -213,40 +298,116 @@ terraform import bmlt_user.example 101
 
 ## Development
 
-### Requirements
+### Prerequisites
 
-- [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.0
-- [Go](https://golang.org/doc/install) >= 1.23
+- Go 1.24.4+
+- Make
+- golangci-lint (for linting)
 
 ### Building
 
-```shell
-go build -o terraform-provider-bmlt
+```bash
+# Quick build
+go build -v .
+
+# Build with version info and install locally
+make build
+
+# Install for local testing
+make install
 ```
 
 ### Testing
 
-```shell
-make test
+```bash
+# Unit tests
+go test ./...
+
+# Unit tests with coverage
+go test -race -coverprofile=coverage.out -covermode=atomic ./...
+
+# Acceptance tests (requires BMLT server credentials)
+export BMLT_HOST="https://your-server.com/main_server"
+export BMLT_USERNAME="your-username"
+export BMLT_PASSWORD="your-password"
+make testacc
 ```
 
-### Generating Documentation
+### Code Quality
 
-```shell
-go generate ./...
+```bash
+# Lint code
+make lint
+
+# Format code
+make fmt
+
+# Generate documentation
+make docs
 ```
 
-This will update the docs directory with the latest schema information.
+### Local Development Testing
+
+```bash
+# Build and install provider locally
+go build -o terraform-provider-bmlt
+mkdir -p ~/.terraform.d/plugins/registry.terraform.io/bmlt-enabled/bmlt/99.0.0/darwin_amd64
+cp terraform-provider-bmlt ~/.terraform.d/plugins/registry.terraform.io/bmlt-enabled/bmlt/99.0.0/darwin_amd64/
+
+# Test with example configuration
+cd examples/complete-example
+terraform init
+terraform plan
+```
+
+## Documentation
+
+Complete documentation is available in the [`docs/`](./docs/) directory:
+
+- [Provider Configuration](./docs/index.md)
+- Resources:
+  - [`bmlt_format`](./docs/resources/format.md)
+  - [`bmlt_meeting`](./docs/resources/meeting.md) 
+  - [`bmlt_service_body`](./docs/resources/service_body.md)
+  - [`bmlt_user`](./docs/resources/user.md)
+- Data Sources:
+  - [`bmlt_formats`](./docs/data-sources/formats.md)
+  - [`bmlt_meetings`](./docs/data-sources/meetings.md)
+  - [`bmlt_service_bodies`](./docs/data-sources/service_bodies.md)
+  - [`bmlt_users`](./docs/data-sources/users.md)
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for your changes
-5. Run the test suite
-6. Submit a pull request
+Contributions are welcome! Please see our [development guide](./DEVELOPMENT.md) for details on:
+
+- Setting up your development environment
+- Running tests
+- Code style and standards
+- Submitting pull requests
+
+## Release Process
+
+This project uses GitHub Actions for CI/CD:
+
+1. **Push/PR**: Runs tests, linting, security scans
+2. **Git tag**: Triggers GoReleaser build for multiple platforms
+3. **GitHub Release**: Automatically created with signed artifacts
+4. **Terraform Registry**: Published after GitHub release
+
+## Support
+
+- **Issues**: Report bugs or request features via [GitHub Issues](https://github.com/bmlt-enabled/terraform-provider-bmlt/issues)
+- **Discussions**: Join the conversation on [GitHub Discussions](https://github.com/bmlt-enabled/terraform-provider-bmlt/discussions)
+- **BMLT Community**: Visit [bmlt.app](https://bmlt.app) for more information about BMLT
 
 ## License
 
-This provider is released under the MIT License. See LICENSE for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Security
+
+If you discover a security vulnerability, please email security@bmlt.app instead of creating a public issue.
+
+---
+
+*This provider is developed and maintained by the BMLT community. It is not affiliated with Terraform or HashiCorp.*
