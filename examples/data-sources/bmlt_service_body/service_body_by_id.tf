@@ -19,16 +19,16 @@ data "bmlt_service_body" "by_id" {
 
 output "service_body_by_id" {
   value = {
-    id               = data.bmlt_service_body.by_id.id
-    name             = data.bmlt_service_body.by_id.name
-    description      = data.bmlt_service_body.by_id.description
-    type             = data.bmlt_service_body.by_id.type
-    parent_id        = data.bmlt_service_body.by_id.parent_id
-    admin_user_id    = data.bmlt_service_body.by_id.admin_user_id
+    id                = data.bmlt_service_body.by_id.id
+    name              = data.bmlt_service_body.by_id.name
+    description       = data.bmlt_service_body.by_id.description
+    type              = data.bmlt_service_body.by_id.type
+    parent_id         = data.bmlt_service_body.by_id.parent_id
+    admin_user_id     = data.bmlt_service_body.by_id.admin_user_id
     assigned_user_ids = data.bmlt_service_body.by_id.assigned_user_ids
-    url              = data.bmlt_service_body.by_id.url
-    helpline         = data.bmlt_service_body.by_id.helpline
-    email            = data.bmlt_service_body.by_id.email
-    world_id         = data.bmlt_service_body.by_id.world_id
+    url               = data.bmlt_service_body.by_id.url
+    helpline          = data.bmlt_service_body.by_id.helpline
+    email             = data.bmlt_service_body.by_id.email
+    world_id          = data.bmlt_service_body.by_id.world_id
   }
 }

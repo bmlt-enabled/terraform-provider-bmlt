@@ -29,10 +29,10 @@ variable "user_lookup" {
     id       = optional(number)
     username = optional(string)
   })
-  
+
   # Example values - provide only one:
   default = {
-    username = "admin"  # Use username lookup
+    username = "admin" # Use username lookup
     # id = 1            # Or use ID lookup (comment out username)
   }
 }
@@ -64,6 +64,6 @@ output "user_details" {
       type         = data.bmlt_user.dynamic.type
     }
   }
-  
+
   description = "User details retrieved using different lookup methods"
 }

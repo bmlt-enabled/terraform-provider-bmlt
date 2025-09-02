@@ -29,10 +29,10 @@ variable "service_body_lookup" {
     id   = optional(number)
     name = optional(string)
   })
-  
+
   # Example values - provide only one:
   default = {
-    name = "Central Allegheny Mountain Area"  # Use name lookup
+    name = "Central Allegheny Mountain Area" # Use name lookup
     # id = 1046                               # Or use ID lookup (comment out name)
   }
 }
@@ -67,7 +67,7 @@ output "service_body_details" {
       parent_id   = data.bmlt_service_body.dynamic.parent_id
     }
   }
-  
+
   description = "Service body details retrieved using different lookup methods"
 }
 
