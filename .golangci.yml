@@ -4,8 +4,7 @@ run:
   tests: true
 
 output:
-  formats:
-    - format: colored-line-number
+  format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
 
@@ -43,7 +42,7 @@ linters:
     - typecheck
     - unconvert
     - unparam
-    - unused  # This replaces deadcode, varcheck, and structcheck
+    - unused
     - whitespace
   settings:
     govet:
@@ -62,24 +61,11 @@ linters:
     goimports:
       local-prefixes: github.com/bmlt-enabled/terraform-provider-bmlt
     gocritic:
-      enabled-tags:
-        - diagnostic
-        - experimental
-        - opinionated
-        - performance
-        - style
-      disabled-checks:
-        - dupImport
-        - ifElseChain
-        - octalLiteral
-        - whyNoLint
-        - wrapperFunc
+      enabled-tags: [diagnostic, experimental, opinionated, performance, style]
+      disabled-checks: [dupImport, ifElseChain, octalLiteral, whyNoLint, wrapperFunc]
 
 issues:
   exclude-rules:
     - path: _test\.go
-      linters:
-        - gomnd
-        - funlen
-        - gocyclo
+      linters: [gomnd, funlen, gocyclo]
   max-same-issues: 0
