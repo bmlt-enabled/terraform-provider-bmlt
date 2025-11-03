@@ -26,5 +26,6 @@ User data source allows you to retrieve information about a specific user by eit
 - `display_name` (String) Display name
 - `email` (String) User email
 - `id` (Number) User identifier (computed from user_id or resolved from username)
+- `last_login_at` (String) Last login timestamp (computed from last token generation)
 - `owner_id` (Number) Owner identifier
 - `type` (String) User type

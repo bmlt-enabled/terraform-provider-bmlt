@@ -107,6 +107,7 @@ resource "bmlt_user" "complete_user" {
 ### Read-Only
 
 - `id` (String) User identifier
+- `last_login_at` (String) Last login timestamp (computed from last token generation)
 
 ## Import
 
