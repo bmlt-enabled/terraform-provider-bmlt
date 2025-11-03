@@ -34,6 +34,7 @@ type UserResourceModel struct {
 	Description types.String `tfsdk:"description"`
 	Email       types.String `tfsdk:"email"`
 	OwnerId     types.Int64  `tfsdk:"owner_id"`
+	LastLoginAt types.String `tfsdk:"last_login_at"`
 }
 
 func (r *UserResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -80,6 +81,10 @@ func (r *UserResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 			"owner_id": schema.Int64Attribute{
 				MarkdownDescription: "Owner identifier",
 				Optional:            true,
+			},
+			"last_login_at": schema.StringAttribute{
+				MarkdownDescription: "Last login timestamp (computed from last token generation)",
+				Computed:            true,
 			},
 		},
 	}
@@ -281,5 +286,6 @@ func (r *UserResource) updateModelFromUser(data *UserResourceModel, user *bmlt.U
 	data.Description = nullableString(user.Description)
 	data.Email = nullableString(user.Email)
 	data.OwnerId = types.Int64Value(int64(user.OwnerId))
+	data.LastLoginAt = nullableString(user.LastLoginAt)
 	// Note: Password is not returned from API for security reasons
 }

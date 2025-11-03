@@ -29,6 +29,7 @@ type UserDataSourceModel struct {
 	Description types.String `tfsdk:"description"`
 	Email       types.String `tfsdk:"email"`
 	OwnerId     types.Int64  `tfsdk:"owner_id"`
+	LastLoginAt types.String `tfsdk:"last_login_at"`
 }
 
 func (d *UserDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -70,6 +71,10 @@ func (d *UserDataSource) Schema(ctx context.Context, req datasource.SchemaReques
 			},
 			"owner_id": schema.Int64Attribute{
 				MarkdownDescription: "Owner identifier",
+				Computed:            true,
+			},
+			"last_login_at": schema.StringAttribute{
+				MarkdownDescription: "Last login timestamp (computed from last token generation)",
 				Computed:            true,
 			},
 		},
@@ -149,6 +154,7 @@ func (d *UserDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		data.Description = types.StringValue(user.Description)
 		data.Email = types.StringValue(user.Email)
 		data.OwnerId = types.Int64Value(int64(user.OwnerId))
+		data.LastLoginAt = nullableString(user.LastLoginAt)
 	} else {
 		// If username is provided, fetch all users and filter
 		targetUsername := data.Username.ValueString()
@@ -186,6 +192,7 @@ func (d *UserDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		data.Description = types.StringValue(foundUser.Description)
 		data.Email = types.StringValue(foundUser.Email)
 		data.OwnerId = types.Int64Value(int64(foundUser.OwnerId))
+		data.LastLoginAt = nullableString(foundUser.LastLoginAt)
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

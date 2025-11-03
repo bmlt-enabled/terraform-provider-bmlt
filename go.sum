@@ -1,5 +1,5 @@
-github.com/bmlt-enabled/bmlt-server-go-client v1.2.0 h1:/vRU/hK2Fjv270xr+3lbNkRMBUIMhjgkvh2CDR8YeRE=
-github.com/bmlt-enabled/bmlt-server-go-client v1.2.0/go.mod h1:i2lA31CA5+CJ4ymLDKRHzI7N+nPqcFrld+/sHHcyne8=
+github.com/bmlt-enabled/bmlt-server-go-client v1.3.0 h1:RKA5ff0m6D8iLyP/G+3P3dhLHbN2FIYovb6AiAlwG/0=
+github.com/bmlt-enabled/bmlt-server-go-client v1.3.0/go.mod h1:i2lA31CA5+CJ4ymLDKRHzI7N+nPqcFrld+/sHHcyne8=
 github.com/bufbuild/protocompile v0.14.1 h1:iA73zAf/fyljNjQKwYzUHD6AD4R8KMasmwa/FBatYVw=
 github.com/bufbuild/protocompile v0.14.1/go.mod h1:ppVdAIhbr2H8asPk6k4pY7t9zB1OU5DoEw9xY/FUi1c=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

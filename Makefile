@@ -1,5 +1,8 @@
 # Terraform Provider for BMLT
 
+help:  ## Print the help documentation
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
 default: build
 
 GIT_COMMIT?=$(shell git rev-parse HEAD)
@@ -9,9 +12,6 @@ GIT_IMPORT=github.com/bmlt-enabled/terraform-provider-bmlt/version
 LDFLAGS=-X $(GIT_IMPORT).GitCommit=$(GIT_COMMIT)$(GIT_DIRTY) -X $(GIT_IMPORT).GitDescribe=$(GIT_DESCRIBE)
 
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
-
-help:  ## Print the help documentation
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 build: fmtcheck  ## Build
 	go install -ldflags "$(LDFLAGS)"
@@ -36,10 +36,10 @@ vet:
 fmt:  ## Format
 	gofmt -w $(GOFMT_FILES)
 
-fmtcheck:
+fmtcheck:  ## Format check
 	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
 
-lint:
+lint:  ## lint
 	@echo "==> Checking source code against linters..."
 	@golangci-lint run ./...
 
@@ -47,8 +47,11 @@ tools:
 	@echo "==> installing required tooling..."
 	@sh -c "'$(CURDIR)/scripts/install-tools.sh'"
 
-docs:
+docs:  ## Docs
 	go generate ./...
+
+vulncheck:  ## Vulncheck
+	govulncheck ./...
 
 install: build
 	mkdir -p ~/.terraform.d/plugins/bmlt-enabled.org/local/bmlt/1.0.0/darwin_amd64
