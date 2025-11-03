@@ -48,6 +48,7 @@ tools:
 	@sh -c "'$(CURDIR)/scripts/install-tools.sh'"
 
 docs:  ## Docs
+	go get github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 	go generate ./...
 
 vulncheck:  ## Vulncheck
