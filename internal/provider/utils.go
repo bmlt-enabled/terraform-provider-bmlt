@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/bmlt-enabled/bmlt-server-go-client"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -39,4 +40,13 @@ func nullableString(s string) types.String {
 		return types.StringNull()
 	}
 	return types.StringValue(s)
+}
+
+// Helper function to convert bmlt.NullableTime to types.String
+// Returns types.StringNull() if not set, or the ISO8601 formatted time string
+func nullableTime(t bmlt.NullableTime) types.String {
+	if !t.IsSet() || t.Get() == nil {
+		return types.StringNull()
+	}
+	return types.StringValue(t.Get().String())
 }

@@ -286,6 +286,6 @@ func (r *UserResource) updateModelFromUser(data *UserResourceModel, user *bmlt.U
 	data.Description = nullableString(user.Description)
 	data.Email = nullableString(user.Email)
 	data.OwnerId = types.Int64Value(int64(user.OwnerId))
-	data.LastLoginAt = nullableString(user.LastLoginAt)
+	data.LastLoginAt = nullableTime(user.LastLoginAt)
 	// Note: Password is not returned from API for security reasons
 }

@@ -154,7 +154,7 @@ func (d *UserDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		data.Description = types.StringValue(user.Description)
 		data.Email = types.StringValue(user.Email)
 		data.OwnerId = types.Int64Value(int64(user.OwnerId))
-		data.LastLoginAt = nullableString(user.LastLoginAt)
+		data.LastLoginAt = nullableTime(user.LastLoginAt)
 	} else {
 		// If username is provided, fetch all users and filter
 		targetUsername := data.Username.ValueString()
@@ -192,7 +192,7 @@ func (d *UserDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		data.Description = types.StringValue(foundUser.Description)
 		data.Email = types.StringValue(foundUser.Email)
 		data.OwnerId = types.Int64Value(int64(foundUser.OwnerId))
-		data.LastLoginAt = nullableString(foundUser.LastLoginAt)
+		data.LastLoginAt = nullableTime(foundUser.LastLoginAt)
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
