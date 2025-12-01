@@ -5,7 +5,7 @@ go 1.24.9
 require (
 	github.com/bmlt-enabled/bmlt-server-go-client v1.3.0
 	github.com/hashicorp/terraform-plugin-framework v1.16.1
-	golang.org/x/oauth2 v0.32.0
+	golang.org/x/oauth2 v0.33.0
 )
 
 require (
