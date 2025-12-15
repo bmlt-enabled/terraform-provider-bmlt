@@ -299,6 +299,7 @@ func (p *BMTProvider) Resources(ctx context.Context) []func() resource.Resource 
 		NewFormatResource,
 		NewMeetingResource,
 		NewServiceBodyResource,
+		NewSettingsResource,
 		NewUserResource,
 	}
 }
@@ -309,6 +310,7 @@ func (p *BMTProvider) DataSources(ctx context.Context) []func() datasource.DataS
 		NewMeetingsDataSource,
 		NewServiceBodiesDataSource,
 		NewServiceBodyDataSource,
+		NewSettingsDataSource,
 		NewUserDataSource,
 		NewUsersDataSource,
 	}
