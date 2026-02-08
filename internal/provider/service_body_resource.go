@@ -37,6 +37,7 @@ type ServiceBodyResourceModel struct {
 	Helpline        types.String  `tfsdk:"helpline"`
 	Email           types.String  `tfsdk:"email"`
 	WorldId         types.String  `tfsdk:"world_id"`
+	ForceDelete     types.Bool    `tfsdk:"force_delete"`
 }
 
 func (r *ServiceBodyResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -94,6 +95,10 @@ func (r *ServiceBodyResource) Schema(ctx context.Context, req resource.SchemaReq
 			},
 			"world_id": schema.StringAttribute{
 				MarkdownDescription: "World identifier",
+				Optional:            true,
+			},
+			"force_delete": schema.BoolAttribute{
+				MarkdownDescription: "Force delete the service body even if it has associated meetings",
 				Optional:            true,
 			},
 		},
@@ -292,7 +297,11 @@ func (r *ServiceBodyResource) Delete(ctx context.Context, req resource.DeleteReq
 		return
 	}
 
-	httpResp, err := r.client.Client.RootServerAPI.DeleteServiceBody(r.client.Context, id).Execute()
+	deleteReq := r.client.Client.RootServerAPI.DeleteServiceBody(r.client.Context, id)
+	if data.ForceDelete.ValueBool() {
+		deleteReq = deleteReq.Force("true")
+	}
+	httpResp, err := deleteReq.Execute()
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete service body, got error: %s", err))
 		return

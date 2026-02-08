@@ -126,6 +126,7 @@ resource "bmlt_service_body" "area" {
 ### Optional
 
 - `email` (String) Service body email
+- `force_delete` (Boolean) Force delete the service body even if it has associated meetings
 - `helpline` (String) Service body helpline
 - `parent_id` (Number) Parent service body identifier
 - `url` (String) Service body URL
