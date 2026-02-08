@@ -70,6 +70,7 @@ type MeetingModel struct {
 	BusLines                     types.String  `tfsdk:"bus_lines"`
 	TrainLines                   types.String  `tfsdk:"train_lines"`
 	Comments                     types.String  `tfsdk:"comments"`
+	AdminNotes                   types.String  `tfsdk:"admin_notes"`
 }
 
 func (d *MeetingsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -255,6 +256,10 @@ func (d *MeetingsDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 							MarkdownDescription: "Comments",
 							Computed:            true,
 						},
+						"admin_notes": schema.StringAttribute{
+							MarkdownDescription: "Admin notes (not visible to end users)",
+							Computed:            true,
+						},
 					},
 				},
 			},
@@ -354,6 +359,7 @@ func (d *MeetingsDataSource) Read(ctx context.Context, req datasource.ReadReques
 			BusLines:                     types.StringPointerValue(meeting.BusLines),
 			TrainLines:                   types.StringPointerValue(meeting.TrainLines),
 			Comments:                     types.StringPointerValue(meeting.Comments),
+			AdminNotes:                   types.StringPointerValue(meeting.AdminNotes),
 		}
 
 		// Handle format IDs

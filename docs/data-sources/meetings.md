@@ -61,6 +61,7 @@ output "weekend_meeting_names" {
 
 Read-Only:
 
+- `admin_notes` (String) Admin notes (not visible to end users)
 - `bus_lines` (String) Bus lines
 - `comments` (String) Comments
 - `contact_email_1` (String) Primary contact email

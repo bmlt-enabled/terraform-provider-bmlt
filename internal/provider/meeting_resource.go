@@ -54,6 +54,7 @@ type MeetingResourceModel struct {
 	ContactPhone1        types.String  `tfsdk:"contact_phone_1"`
 	ContactEmail1        types.String  `tfsdk:"contact_email_1"`
 	Comments             types.String  `tfsdk:"comments"`
+	AdminNotes           types.String  `tfsdk:"admin_notes"`
 }
 
 func (r *MeetingResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -177,6 +178,10 @@ func (r *MeetingResource) Schema(ctx context.Context, req resource.SchemaRequest
 				MarkdownDescription: "Comments",
 				Optional:            true,
 			},
+			"admin_notes": schema.StringAttribute{
+				MarkdownDescription: "Admin notes (not visible to end users)",
+				Optional:            true,
+			},
 		},
 	}
 }
@@ -241,6 +246,7 @@ func (r *MeetingResource) Create(ctx context.Context, req resource.CreateRequest
 		ContactPhone1:        data.ContactPhone1.ValueStringPointer(),
 		ContactEmail1:        data.ContactEmail1.ValueStringPointer(),
 		Comments:             data.Comments.ValueStringPointer(),
+		AdminNotes:           data.AdminNotes.ValueStringPointer(),
 	}
 
 	// Create meeting
@@ -346,6 +352,7 @@ func (r *MeetingResource) Update(ctx context.Context, req resource.UpdateRequest
 		ContactPhone1:        data.ContactPhone1.ValueStringPointer(),
 		ContactEmail1:        data.ContactEmail1.ValueStringPointer(),
 		Comments:             data.Comments.ValueStringPointer(),
+		AdminNotes:           data.AdminNotes.ValueStringPointer(),
 	}
 
 	httpResp, err := r.client.Client.RootServerAPI.UpdateMeeting(r.client.Context, id).
@@ -441,6 +448,7 @@ func (r *MeetingResource) updateModelFromMeeting(data *MeetingResourceModel, mee
 	data.ContactPhone1 = types.StringPointerValue(meeting.ContactPhone1)
 	data.ContactEmail1 = types.StringPointerValue(meeting.ContactEmail1)
 	data.Comments = types.StringPointerValue(meeting.Comments)
+	data.AdminNotes = types.StringPointerValue(meeting.AdminNotes)
 
 	// Handle format IDs
 	var responseFormatIds []types.Int64

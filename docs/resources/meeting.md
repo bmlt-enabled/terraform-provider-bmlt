@@ -62,6 +62,7 @@ resource "bmlt_meeting" "example" {
 
 ### Optional
 
+- `admin_notes` (String) Admin notes (not visible to end users)
 - `comments` (String) Comments
 - `contact_email_1` (String) Primary contact email
 - `contact_name_1` (String) Primary contact name

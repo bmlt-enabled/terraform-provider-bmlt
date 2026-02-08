@@ -3,7 +3,7 @@ module github.com/bmlt-enabled/terraform-provider-bmlt
 go 1.25.7
 
 require (
-	github.com/bmlt-enabled/bmlt-server-go-client v1.4.0
+	github.com/bmlt-enabled/bmlt-server-go-client v1.4.1
 	github.com/hashicorp/terraform-plugin-framework v1.17.0
 	golang.org/x/oauth2 v0.35.0
 )
