@@ -34,7 +34,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
+      - name: Install Gosec Security Scanner
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
       - name: Run Gosec Security Scanner
-        uses: securego/gosec@master
-        with:
-          args: './...'
+        run: gosec ./..
